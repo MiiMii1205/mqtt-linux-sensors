@@ -88,7 +88,6 @@ Promise.resolve(args.argv).then(r => {
     const mqttUsername = r.u as string;
 
     if (r.d) {
-        // TODO: Do debug
         logger.level = "debug"
     }
 
