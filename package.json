@@ -1,7 +1,7 @@
 {
     "name": "mqtt-linux-sensors",
     "version": "1.0.0",
-    "description": "",
+    "description": "A typescript MQTT client that pushes linux system stats",
     "main": "index.ts",
     "bin": {
         "mqttlms": "index.ts"
@@ -10,10 +10,22 @@
         "test": "echo \"No tests currently\"",
         "lint": "./node_modules/.bin/eslint *.ts",
         "debug": "ts-node --inspect index.ts",
-        "start": "ts-node index.ts",
-        "build": "tsc && ./node_modules/.bin/pkg dist/index.js --targets host --output ./dist/mqttlms && mv ./dist/mqttlms /bin"
+        "start": "ts-node index.ts"
     },
-    "keywords": [],
+    "keywords": [
+        "linux",
+        "mqtt",
+        "homeassistant"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/MiiMii1205/mqtt-linux-sensors"
+    },
+    "bugs": {
+        "url": "https://github.com/MiiMii1205/mqtt-linux-sensors"
+    },
+    "homepage": "https://github.com/MiiMii1205/mqtt-linux-sensors#readme",
+
     "author": "MiiMii1205",
     "license": "MIT",
     "dependencies": {
@@ -26,7 +38,6 @@
         "luxon": "^1.27.0",
         "mqtt": "^2.18.2",
         "node-os-utils": "^1.3.5",
-        "pkg": "^4.4.0",
         "readline-sync": "^1.4.9",
         "ts-node": "^10.0.0",
         "typescript": "^4.3.2",

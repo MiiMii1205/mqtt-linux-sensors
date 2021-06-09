@@ -1,14 +1,13 @@
 import mqtt from "mqtt";
-import LMSensor from "./LMSensor";
-import winston from "winston";
+import type LMSensor from "./LMSensor";
+import type winston from "winston";
 
 export default class MQTTLMSConnector {
 
     private static readonly SENSOR_TOPIC = "sensor/";
 
-    constructor(private m_lmSensor: LMSensor, private m_url: string, private m_baseTopic: string, private m_username: string, private m_password: string, private m_logger: winston.Logger) {
-
-        let hn =  this.m_lmSensor.hostname
+    constructor(private readonly m_lmSensor: LMSensor, private readonly m_url: string, private readonly m_baseTopic: string, private readonly m_logger: winston.Logger, private readonly m_username: string | undefined, private readonly m_password: string | undefined) {
+        const hn = this.m_lmSensor.hostname;
 
         const mqttClient = mqtt.connect(this.m_url, {
             will : {
@@ -29,9 +28,6 @@ export default class MQTTLMSConnector {
         const cpuUsageTopic = `${this.m_baseTopic}${MQTTLMSConnector.SENSOR_TOPIC}${hn}_cpu_usage`;
         const ramUsageTopic = `${this.m_baseTopic}${MQTTLMSConnector.SENSOR_TOPIC}${hn}_ram_usage`;
 
-
-        // TODP : Do services
-
         const deviceInfo = {
             identifiers : `lm_${hn}`,
             name : hn,
@@ -39,144 +35,119 @@ export default class MQTTLMSConnector {
         };
 
         const lmConfig = {
-            name : hn,
-            state_topic: `${deviceTopic}/state`,
-            availability_topic : `${deviceTopic}/connection`,
-            payload_available : "Online",
-            unique_id: `lm_${hn}`,
-            payload_not_available : "Offline",
-            value_template: "{{value_json['state']}}",
+            name : hn, // eslint-disable-next-line @typescript-eslint/naming-convention
+            state_topic : `${deviceTopic}/state`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            availability_topic : `${deviceTopic}/connection`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            payload_available : "Online", // eslint-disable-next-line @typescript-eslint/naming-convention
+            unique_id : `lm_${hn}`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            payload_not_available : "Offline", // eslint-disable-next-line @typescript-eslint/naming-convention
+            value_template : "{{value_json['state']}}",
             device : deviceInfo
         };
 
         const gpuTemperatureConfig = {
-            name: `${hn} GPU Temperature`,
-            state_topic: `${deviceTopic}/state`,
-            availability_topic: `${deviceTopic}/connection`,
-            payload_available: "Online",
-            payload_not_available: "Offline",
-            unique_id: `lm_${deviceTopic}_gpu_temperature_sensor`,
-            device: deviceInfo,
-            value_template: "{{value_json['gpu_temperature']}}",
-            device_class: "temperature",
-            unit_of_measurement: "°C"
+            name : `${hn} GPU Temperature`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            state_topic : `${deviceTopic}/state`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            availability_topic : `${deviceTopic}/connection`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            payload_available : "Online", // eslint-disable-next-line @typescript-eslint/naming-convention
+            payload_not_available : "Offline", // eslint-disable-next-line @typescript-eslint/naming-convention
+            unique_id : `lm_${deviceTopic}_gpu_temperature_sensor`,
+            device : deviceInfo, // eslint-disable-next-line @typescript-eslint/naming-convention
+            value_template : "{{value_json['gpu_temperature']}}", // eslint-disable-next-line @typescript-eslint/naming-convention
+            device_class : "temperature", // eslint-disable-next-line @typescript-eslint/naming-convention
+            unit_of_measurement : "°C"
         };
 
         const gpuUsageConfig = {
-            name: `${hn} GPU Usage`,
-            state_topic: `${deviceTopic}/state`,
-            availability_topic: `${deviceTopic}/connection`,
-            payload_available: "Online",
-            payload_not_available: "Offline",
-            unique_id: `lm_${deviceTopic}_gpu_usage_sensor`,
-            icon:"mdi:expansion-card",
-            device: deviceInfo,
-            value_template: "{{value_json['gpu_usage']}}",
-            unit_of_measurement: "%"
+            name : `${hn} GPU Usage`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            state_topic : `${deviceTopic}/state`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            availability_topic : `${deviceTopic}/connection`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            payload_available : "Online", // eslint-disable-next-line @typescript-eslint/naming-convention
+            payload_not_available : "Offline", // eslint-disable-next-line @typescript-eslint/naming-convention
+            unique_id : `lm_${deviceTopic}_gpu_usage_sensor`,
+            icon : "mdi:expansion-card",
+            device : deviceInfo, // eslint-disable-next-line @typescript-eslint/naming-convention
+            value_template : "{{value_json['gpu_usage']}}", // eslint-disable-next-line @typescript-eslint/naming-convention
+            unit_of_measurement : "%"
         };
         const cpuTemperatureConfig = {
-            name: `${hn} CPU Temperature`,
-            state_topic: `${deviceTopic}/state`,
-            availability_topic: `${deviceTopic}/connection`,
-            payload_available: "Online",
-            payload_not_available: "Offline",
-            unique_id: `lm_${deviceTopic}_cpu_temperature_sensor`,
-            device: deviceInfo,
-            value_template: "{{value_json['cpu_temperature']}}",
-            device_class: "temperature",
-            unit_of_measurement: "°C"
+            name : `${hn} CPU Temperature`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            state_topic : `${deviceTopic}/state`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            availability_topic : `${deviceTopic}/connection`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            payload_available : "Online", // eslint-disable-next-line @typescript-eslint/naming-convention
+            payload_not_available : "Offline", // eslint-disable-next-line @typescript-eslint/naming-convention
+            unique_id : `lm_${deviceTopic}_cpu_temperature_sensor`,
+            device : deviceInfo, // eslint-disable-next-line @typescript-eslint/naming-convention
+            value_template : "{{value_json['cpu_temperature']}}", // eslint-disable-next-line @typescript-eslint/naming-convention
+            device_class : "temperature", // eslint-disable-next-line @typescript-eslint/naming-convention
+            unit_of_measurement : "°C"
         };
 
         const cpuUsageConfig = {
-            name: `${hn} CPU Usage`,
-            state_topic: `${deviceTopic}/state`,
-            availability_topic: `${deviceTopic}/connection`,
-            payload_available: "Online",
-            payload_not_available: "Offline",
-            unique_id: `lm_${deviceTopic}_cpu_usage_sensor`,
-            device: deviceInfo,
-            icon:"mdi:cpu-64-bit",
-            value_template: "{{value_json['cpu_usage']}}",
-            unit_of_measurement: "%"
+            name : `${hn} CPU Usage`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            state_topic : `${deviceTopic}/state`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            availability_topic : `${deviceTopic}/connection`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            payload_available : "Online", // eslint-disable-next-line @typescript-eslint/naming-convention
+            payload_not_available : "Offline", // eslint-disable-next-line @typescript-eslint/naming-convention
+            unique_id : `lm_${deviceTopic}_cpu_usage_sensor`,
+            device : deviceInfo,
+            icon : "mdi:cpu-64-bit", // eslint-disable-next-line @typescript-eslint/naming-convention
+            value_template : "{{value_json['cpu_usage']}}", // eslint-disable-next-line @typescript-eslint/naming-convention
+            unit_of_measurement : "%"
         };
 
         const ramUsageConfig = {
-            name: `${hn} RAM Usage`,
-            state_topic: `${deviceTopic}/state`,
-            availability_topic: `${deviceTopic}/connection`,
-            payload_available: "Online",
-            payload_not_available: "Offline",
-            unique_id: `lm_${deviceTopic}_ram_usage_sensor`,
-            device: deviceInfo,
-            value_template: "{{value_json['ram_usage']}}",
-            unit_of_measurement: "%"
+            name : `${hn} RAM Usage`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            state_topic : `${deviceTopic}/state`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            availability_topic : `${deviceTopic}/connection`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            payload_available : "Online", // eslint-disable-next-line @typescript-eslint/naming-convention
+            payload_not_available : "Offline", // eslint-disable-next-line @typescript-eslint/naming-convention
+            unique_id : `lm_${deviceTopic}_ram_usage_sensor`,
+            device : deviceInfo, // eslint-disable-next-line @typescript-eslint/naming-convention
+            value_template : "{{value_json['ram_usage']}}", // eslint-disable-next-line @typescript-eslint/naming-convention
+            unit_of_measurement : "%"
         };
-
 
         this.m_lmSensor.on("stateChanged", (data) => {
             this.m_logger.info(`state changed received: ${JSON.stringify(data)}`);
             mqttClient.publish(`${deviceTopic}/state`, JSON.stringify(data), {
-                qos: 0,
-                retain: true
-            })
+                qos : 0,
+                retain : true
+            });
         });
 
         this.m_logger.info(`mqtt topic ${deviceTopic}`);
 
         mqttClient.on("connect", () => {
-
             const id: string | undefined = this.m_lmSensor.hostname;
             lmConfig.name = id;
             lmConfig.device.name = id;
 
-
-            mqttClient
-                .publish(`${deviceTopic}/config`, JSON.stringify(lmConfig), {
-                    retain : true,
-                    qos : 0
-                })
-
-                .publish(`${gpuTemperatureTopic}/config`, JSON.stringify(gpuTemperatureConfig), {
-                    retain : true,
-                    qos : 0
-                })
-
-                .publish(`${gpuUsageTopic}/config`, JSON.stringify(gpuUsageConfig), {
-                    retain : true,
-                    qos : 0
-                })
-
-                .publish(`${cpuTemperatureTopic}/config`, JSON.stringify(cpuTemperatureConfig), {
-                    retain : true,
-                    qos : 0
-                })
-
-                .publish(`${cpuUsageTopic}/config`, JSON.stringify(cpuUsageConfig), {
-                    retain : true,
-                    qos : 0
-                })
-
-                .publish(`${ramUsageTopic}/config`, JSON.stringify(ramUsageConfig), {
-                    retain : true,
-                    qos : 0
-                })
-
-
-                .publish(`${deviceTopic}/connection`, "Online", {
-                    retain : true,
-                    qos : 0
-                })
+            mqttClient.publish(`${deviceTopic}/config`, JSON.stringify(lmConfig), {
+                retain : true,
+                qos : 0
+            }).publish(`${gpuTemperatureTopic}/config`, JSON.stringify(gpuTemperatureConfig), {
+                retain : true,
+                qos : 0
+            }).publish(`${gpuUsageTopic}/config`, JSON.stringify(gpuUsageConfig), {
+                retain : true,
+                qos : 0
+            }).publish(`${cpuTemperatureTopic}/config`, JSON.stringify(cpuTemperatureConfig), {
+                retain : true,
+                qos : 0
+            }).publish(`${cpuUsageTopic}/config`, JSON.stringify(cpuUsageConfig), {
+                retain : true,
+                qos : 0
+            }).publish(`${ramUsageTopic}/config`, JSON.stringify(ramUsageConfig), {
+                retain : true,
+                qos : 0
+            }).publish(`${deviceTopic}/connection`, "Online", {
+                retain : true,
+                qos : 0
+            });
 
             this.m_logger.info("mqtt connected");
-
-        })
-            .on("end", () => this.m_logger.info("mqtt ended"))
-            .on("error", this.m_logger.error)
-            .on("packetsend", (pkg)=> this.m_logger.silly(`Package sent : ${pkg}`, {pkg}) )
-            .on("packetreceive", (pkg)=> this.m_logger.silly(`Package received : ${pkg}`, {pkg}) )
-            .on("offline", () => this.m_logger.info("mqtt offline"))
-            .on("close", () => this.m_logger.info("mqtt close"));
-
+        }).on("end", () => this.m_logger.info("mqtt ended")).on("error", this.m_logger.error).on("packetsend", pkg => this.m_logger.silly(`Package sent : ${pkg.messageId}`, { pkg })).on("packetreceive", pkg => this.m_logger.silly(`Package received : ${pkg.messageId}`, { pkg })).on("offline", () => this.m_logger.info("mqtt offline")).on("close", () => this.m_logger.info("mqtt close"));
     }
 
 }

@@ -1,3 +1,3 @@
-import { LogLevels } from "../enums/LogLevels";
+import type { LogLevels } from "../enums/LogLevels";
 
-declare type LogLevelStrings = keyof typeof LogLevels
+declare type LogLevelStrings = keyof typeof LogLevels;
