@@ -101,6 +101,7 @@ export default class LMSensor extends EventEmitter {
         try {
             let isLocked: boolean = (await exec("qdbus org.freedesktop.ScreenSaver /ScreenSaver GetActive")).stdout.toLowerCase() === "true";
             const nbOfUser: number = parseInt((await exec("who -q")).stdout.trim().split("\n").pop()?.split(":")?.pop()?.trim() ?? "0") ;
+            this.m_logger.verbose(`${nbOfUser} user(s) connected`);
             isLocked = isLocked || (nbOfUser <= 0);
             this.m_logger.verbose(isLocked ? "Session is locked" : "Session is unlocked");
             return isLocked;
