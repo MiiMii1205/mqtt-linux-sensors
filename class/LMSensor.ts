@@ -106,6 +106,7 @@ export default class LMSensor extends EventEmitter {
             this.m_logger.verbose(isLocked ? "Session is locked" : "Session is unlocked");
             return isLocked;
         } catch (e) {
+            this.m_logger.error(e);
             this.m_logger.verbose("Session is unlocked");
             return false;
         }
