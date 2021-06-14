@@ -349,7 +349,7 @@
         "keyword-spacing" : "error",
         "@typescript-eslint/keyword-spacing" : "error",
         "linebreak-style" : [
-            "error", "windows"
+            "error", "unix"
         ],
         "max-classes-per-file" : [ "error", 1 ],
         "multiline-ternary" : [ "error", "always-multiline" ],
