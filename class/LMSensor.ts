@@ -10,6 +10,8 @@ import type { ILMSStats } from "../interface/ILMSStats";
 import type { IGPUStat } from "../interface/IGPUStat";
 import type winston from "winston";
 import { tools } from "../util/tools";
+import { LMSwitchPositions } from "../enums/LMSwitchPositions";
+import { LMPCStates } from "../enums/LMPCStates";
 
 const exec = util.promisify(execCb);
 
@@ -17,8 +19,10 @@ export default class LMSensor extends EventEmitter {
 
     private readonly m_hostname: string;
     private m_stats: ILMSStats = {
+        webcamState : LMSwitchPositions.OFF, // eslint-disable-next-line @typescript-eslint/naming-convention
+        micState : LMSwitchPositions.OFF,
         id : "",
-        state : "Online", // eslint-disable-next-line @typescript-eslint/naming-convention
+        state : LMPCStates.OFFLINE, // eslint-disable-next-line @typescript-eslint/naming-convention
         cpu_usage : 0, // eslint-disable-next-line @typescript-eslint/naming-convention
         cpu_temperature : 0, // eslint-disable-next-line @typescript-eslint/naming-convention
         gpu_usage : 0, // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -33,7 +37,7 @@ export default class LMSensor extends EventEmitter {
         setTimeout(this.readData.bind(this), 5000);
 
         this.m_stats.id = this.m_hostname;
-        this.m_stats.state = "Online";
+        this.m_stats.state = LMPCStates.ONLINE;
 
         const interval = Duration.fromObject({ minutes : ((poll > 0) ? poll : tools.randomInt(2, 5)) }).toMillis();
 
@@ -49,7 +53,7 @@ export default class LMSensor extends EventEmitter {
     }
 
     private async readData(): Promise<void> {
-        const [gpu, cpuTemperature, ramUsage, isLocked, cpuUsage] = await Promise.all([
+        const [gpu, cpuTemperature, ramUsage, isLocked, cpuUsage, micState, webcamState] = await Promise.all([
             this.getGpuStats(),
             this.getCpuTemperature(),
             mem.used().then((u) => {
@@ -62,7 +66,9 @@ export default class LMSensor extends EventEmitter {
                 const cpuUsage: number = Math.round(u);
                 this.m_logger.verbose(`CPU Usage: ${cpuUsage}%`);
                 return cpuUsage;
-            })
+            }),
+            this.getMicState(),
+            this.getWebcamState()
         ]);
 
         this.m_stats.cpu_temperature = cpuTemperature;
@@ -70,9 +76,34 @@ export default class LMSensor extends EventEmitter {
         this.m_stats.gpu_temperature = gpu.temperature;
         this.m_stats.gpu_usage = gpu.usage;
         this.m_stats.ram_usage = ramUsage;
-        this.m_stats.state = isLocked ? "Locked" : "Online";
+        this.m_stats.state = isLocked ? LMPCStates.LOCKED : LMPCStates.ONLINE;
+        this.m_stats.micState = micState ? LMSwitchPositions.ON : LMSwitchPositions.OFF;
+        this.m_stats.webcamState = webcamState ? LMSwitchPositions.ON : LMSwitchPositions.OFF;
 
         this.emit("stateChanged", this.currentState);
+    }
+
+    private async getMicState(): Promise<boolean> {
+        const deviceName = (await exec("pacmd info | grep \"Default source\" | cut -f4 -d\" \"")).stdout.trim();
+        this.m_logger.verbose(`Found audio source ${deviceName}`);
+        const sourceStatus = (await exec(`pacmd list sources | grep -A 10 ${deviceName} | grep "state" | cut -f2 -d" "`)).stdout.trim();
+
+        switch (sourceStatus) {
+            case "IDLE":
+            case "SUSPENDED":
+                this.m_logger.verbose(`${deviceName} is inactive`);
+                return false;
+            case "RUNNING":
+                this.m_logger.verbose(`${deviceName} is recording`);
+                return true;
+            default:
+                throw new Error(`${deviceName} has an unknown state : "${sourceStatus}"`);
+        }
+    }
+    private async getWebcamState(): Promise<boolean> {
+        const state = parseInt((await exec("lsmod | grep \"uvcvideo\\s\" | sed -E s/\\ +/\\ /g | cut -f3 -d\" \"")).stdout.trim()) === 1;
+        this.m_logger.verbose(`Webcam is ${state ? LMSwitchPositions.ON : LMSwitchPositions.OFF}`);
+        return state;
     }
 
     private async getCpuTemperature(): Promise<number> {
@@ -99,7 +130,7 @@ export default class LMSensor extends EventEmitter {
 
     private async getLockState(): Promise<boolean> {
         try {
-            const nbOfUser: number = parseInt((await exec("who -q")).stdout.trim().split("\n").pop()?.split(":")?.pop()?.trim() ?? "0") ;
+            const nbOfUser: number = parseInt((await exec("who -q")).stdout.trim().split("\n").pop()?.split(":")?.pop()?.trim() ?? "0");
             this.m_logger.verbose(`${nbOfUser} user(s) connected`);
             const isLocked = nbOfUser <= 0;
             this.m_logger.verbose(isLocked ? "Session is locked" : "Session is unlocked");

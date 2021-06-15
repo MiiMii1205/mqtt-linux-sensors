@@ -1,6 +1,9 @@
+import type { LMSwitchPositions } from "../enums/LMSwitchPositions";
+import type { LMPCStates } from "../enums/LMPCStates";
+
 export interface ILMSStats {
     id: string;
-    state: string;
+    state: LMPCStates;
     // eslint-disable-next-line @typescript-eslint/naming-convention
     cpu_usage: number;
     // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -13,4 +16,6 @@ export interface ILMSStats {
     gpu_usage: number;
     // eslint-disable-next-line @typescript-eslint/naming-convention
     gpu_temperature: number;
+    micState: LMSwitchPositions;
+    webcamState: LMSwitchPositions;
 }
