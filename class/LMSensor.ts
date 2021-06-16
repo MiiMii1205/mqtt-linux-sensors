@@ -147,7 +147,7 @@ export default class LMSensor extends EventEmitter {
         const prcSrc = await exec(`pacmd list sources | grep -A 10 ${deviceName} | grep "state" | cut -f2 -d" "`);
         const sourceStatus = prcSrc.stdout.trim();
 
-        assert(prcSrc.stderr.trim().length <= 0, prc.stderr);
+        assert(prcSrc.stderr.trim().length <= 0, prcSrc.stderr);
 
         if (deviceName.length > 0) {
             switch (sourceStatus) {
