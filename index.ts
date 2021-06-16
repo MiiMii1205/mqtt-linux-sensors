@@ -25,6 +25,7 @@ if (process.env.NODE_ENV !== "production") {
 
     transports.push(new winston.transports.File({
         filename : "logs.log",
+        dirname : "/opt/mqttlms",
         level : "error",
         handleExceptions : true,
         format : winston.format.combine(tools.isError(), winston.format.colorize({ all : true }), winston.format.timestamp({
