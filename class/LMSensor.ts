@@ -108,7 +108,7 @@ export default class LMSensor extends EventEmitter {
     }
 
     private async readData(): Promise<void> {
-        const [gpu, cpuTemperature, ramUsage, isLocked, cpuUsage, micState, webcamState] = await Promise.all([
+        const [gpu, cpuTemperature, ramUsage, isLocked, cpuUsage, webcamState] = await Promise.all([
             this.getGpuStats(),
             this.getCpuTemperature(),
             mem.used().then((u) => {
@@ -122,7 +122,7 @@ export default class LMSensor extends EventEmitter {
                 this.m_logger.verbose(`CPU Usage: ${cpuUsage}%`);
                 return cpuUsage;
             }),
-            this.getMicState(),
+            // this.getMicState(),
             this.getWebcamState()
         ]);
 
@@ -132,7 +132,7 @@ export default class LMSensor extends EventEmitter {
         this.m_stats.gpu_usage = gpu.usage;
         this.m_stats.ram_usage = ramUsage;
         this.m_stats.state = isLocked ? LMPCStates.LOCKED : LMPCStates.ONLINE;
-        this.m_stats.micState = micState ? LMSwitchPositions.ON : LMSwitchPositions.OFF;
+        // this.m_stats.micState = micState ? LMSwitchPositions.ON : LMSwitchPositions.OFF;
         this.m_stats.webcamState = webcamState ? LMSwitchPositions.ON : LMSwitchPositions.OFF;
 
         this.emit("stateChanged", this.currentState);
