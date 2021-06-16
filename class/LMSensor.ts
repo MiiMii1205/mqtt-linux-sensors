@@ -139,9 +139,15 @@ export default class LMSensor extends EventEmitter {
     }
 
     private async getMicState(): Promise<boolean> {
-        const deviceName = (await exec("pacmd info | grep \"Default source\" | cut -f4 -d\" \"")).stdout.trim();
+        const prc = await exec("pacmd info | grep \"Default source\" | cut -f4 -d\" \"");
+        assert(prc.stderr.trim().length <= 0, prc.stderr);
+        const deviceName = prc.stdout.trim();
+
         this.m_logger.verbose(`Found audio source ${deviceName}`);
-        const sourceStatus = (await exec(`pacmd list sources | grep -A 10 ${deviceName} | grep "state" | cut -f2 -d" "`)).stdout.trim();
+        const prcSrc = await exec(`pacmd list sources | grep -A 10 ${deviceName} | grep "state" | cut -f2 -d" "`);
+        const sourceStatus = prcSrc.stdout.trim();
+
+        assert(prcSrc.stderr.trim().length <= 0, prc.stderr);
 
         switch (sourceStatus) {
             case "IDLE":
