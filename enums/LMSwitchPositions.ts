@@ -1,4 +1,3 @@
 export enum LMSwitchPositions {
-    ON = "on",
-    OFF = "off"
+    ON = "on", OFF = "off"
 }

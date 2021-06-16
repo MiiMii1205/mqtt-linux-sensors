@@ -1,5 +1,6 @@
 import type { LMSwitchPositions } from "../enums/LMSwitchPositions";
 import type { LMPCStates } from "../enums/LMPCStates";
+import type { ILMNotification } from "./ILMNotification";
 
 export interface ILMSStats {
     id: string;
@@ -18,4 +19,5 @@ export interface ILMSStats {
     gpu_temperature: number;
     micState: LMSwitchPositions;
     webcamState: LMSwitchPositions;
+    notification: ILMNotification;
 }

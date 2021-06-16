@@ -1,7 +1,8 @@
 import EventEmitter from "events";
 import { hostname } from "os";
 import { Duration } from "luxon";
-import { exec as execCb } from "child_process";
+import type { ChildProcessWithoutNullStreams } from "child_process";
+import { exec as execCb, spawn } from "child_process";
 import * as util from "util";
 import parser from "fast-xml-parser";
 import assert from "assert";
@@ -12,13 +13,20 @@ import type winston from "winston";
 import { tools } from "../util/tools";
 import { LMSwitchPositions } from "../enums/LMSwitchPositions";
 import { LMPCStates } from "../enums/LMPCStates";
+import type { ILMNotification } from "../interface/ILMNotification";
 
 const exec = util.promisify(execCb);
 
 export default class LMSensor extends EventEmitter {
 
     private readonly m_hostname: string;
+    private readonly m_notificationProcess: ChildProcessWithoutNullStreams;
     private m_stats: ILMSStats = {
+        notification : {
+            description : "",
+            source : "",
+            title : ""
+        },
         webcamState : LMSwitchPositions.OFF, // eslint-disable-next-line @typescript-eslint/naming-convention
         micState : LMSwitchPositions.OFF,
         id : "",
@@ -36,8 +44,18 @@ export default class LMSensor extends EventEmitter {
         this.m_hostname = hostname();
         setTimeout(this.readData.bind(this), 5000);
 
+        this.m_notificationProcess = spawn("dbus-monitor", ["interface='org.freedesktop.Notifications', member='Notify'"]);
+
         this.m_stats.id = this.m_hostname;
         this.m_stats.state = LMPCStates.ONLINE;
+
+        this.m_notificationProcess.stdout.on("data", async (d: Buffer) => {
+            const isNotification = /org\.freedesktop\.Notifications/ig.test(d.toString());
+            if (isNotification) {
+                await this.manageNewNotification(d);
+                await this.readData();
+            }
+        });
 
         const interval = Duration.fromObject({ minutes : ((poll > 0) ? poll : tools.randomInt(2, 5)) }).toMillis();
 
@@ -50,6 +68,43 @@ export default class LMSensor extends EventEmitter {
 
     public get currentState(): ILMSStats {
         return this.m_stats;
+    }
+
+    private manageNewNotification(data: Buffer): Promise<ILMNotification> {
+        let str = data.toString();
+        str = str.replace(/[[(]\n+[^\]]+[\])]/igm, (s: string) => s.replace(/\n/ig, " "));
+
+        const [, source, , , title, description] = str.split("\n").map((s: string) => {
+            const [type, ... arr] = s.trim().split(" ");
+
+            const value = arr.join(" ").trim();
+            console.log(value);
+
+            switch (type) {
+                case "string":
+                    return value.replace(/"/ig, "").trim();
+                case "uint32":
+                case "int32":
+                    return parseInt(value);
+                default:
+                    return value;
+            }
+        });
+
+        assert(typeof title === "string", "title is not a string");
+        assert(typeof source === "string", "source is not a string");
+        assert(typeof description === "string", "description is not a string");
+
+        const infos: ILMNotification = {
+            title,
+            description,
+            source
+        };
+
+        this.m_logger.verbose(`New notification: ${JSON.stringify(infos)}`);
+        this.m_stats.notification = infos;
+        this.emit("newNotification", this.m_stats.notification);
+        return Promise.resolve(infos);
     }
 
     private async readData(): Promise<void> {
@@ -100,6 +155,7 @@ export default class LMSensor extends EventEmitter {
                 throw new Error(`${deviceName} has an unknown state : "${sourceStatus}"`);
         }
     }
+
     private async getWebcamState(): Promise<boolean> {
         const state = parseInt((await exec("lsmod | grep \"uvcvideo\\s\" | sed -E s/\\ +/\\ /g | cut -f3 -d\" \"")).stdout.trim()) === 1;
         this.m_logger.verbose(`Webcam is ${state ? LMSwitchPositions.ON : LMSwitchPositions.OFF}`);
