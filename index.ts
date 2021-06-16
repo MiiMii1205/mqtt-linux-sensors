@@ -23,6 +23,15 @@ if (process.env.NODE_ENV !== "production") {
         }), tools.botErrorFormat)
     }));
 
+    transports.push(new winston.transports.File({
+        filename : "logs.log",
+        level : "error",
+        handleExceptions : true,
+        format : winston.format.combine(tools.isError(), winston.format.colorize({ all : true }), winston.format.timestamp({
+            format : "M/D/YYYY HH:mm:ss.SS ZZ A"
+        }), tools.botErrorFormat)
+    }));
+
     transports.push(new winston.transports.Console({
         level : "debug",
         handleExceptions : true,
