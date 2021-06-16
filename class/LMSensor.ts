@@ -149,16 +149,20 @@ export default class LMSensor extends EventEmitter {
 
         assert(prcSrc.stderr.trim().length <= 0, prc.stderr);
 
-        switch (sourceStatus) {
-            case "IDLE":
-            case "SUSPENDED":
-                this.m_logger.verbose(`${deviceName} is inactive`);
-                return false;
-            case "RUNNING":
-                this.m_logger.verbose(`${deviceName} is recording`);
-                return true;
-            default:
-                throw new Error(`${deviceName} has an unknown state : "${sourceStatus}"`);
+        if (deviceName.length > 0) {
+            switch (sourceStatus) {
+                case "IDLE":
+                case "SUSPENDED":
+                    this.m_logger.verbose(`${deviceName} is inactive`);
+                    return false;
+                case "RUNNING":
+                    this.m_logger.verbose(`${deviceName} is recording`);
+                    return true;
+                default:
+                    throw new Error(`${deviceName} has an unknown state : "${sourceStatus}"`);
+            }
+        } else {
+            return false;
         }
     }
 
