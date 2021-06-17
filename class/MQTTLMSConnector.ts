@@ -108,7 +108,9 @@ export default class MQTTLMSConnector {
             payload_not_available : LMPCStates.OFFLINE, // eslint-disable-next-line @typescript-eslint/naming-convention
             unique_id : `lm_${hn}_mic`, // eslint-disable-next-line @typescript-eslint/naming-convention
             value_template : "{{value_json['micState']}}", // eslint-disable-next-line @typescript-eslint/naming-convention
-            device : deviceInfo
+            device : deviceInfo,
+            icon : "mdi:microphone"
+
         };
 
         const webcamConfig = {
@@ -119,7 +121,8 @@ export default class MQTTLMSConnector {
             payload_not_available : LMPCStates.OFFLINE, // eslint-disable-next-line @typescript-eslint/naming-convention
             unique_id : `lm_${hn}_webcam`, // eslint-disable-next-line @typescript-eslint/naming-convention
             value_template : "{{value_json['webcamState']}}", // eslint-disable-next-line @typescript-eslint/naming-convention
-            device : deviceInfo
+            device : deviceInfo,
+            icon : "mdi:webcam"
         };
 
         const ramUsageConfig = {
@@ -131,7 +134,8 @@ export default class MQTTLMSConnector {
             unique_id : `lm_${hn}_ram_usage_sensor`,
             device : deviceInfo, // eslint-disable-next-line @typescript-eslint/naming-convention
             value_template : "{{value_json['ram_usage']}}", // eslint-disable-next-line @typescript-eslint/naming-convention
-            unit_of_measurement : "%"
+            unit_of_measurement : "%",
+            icon : "mdi:memory"
         };
 
         const notificationConfig = {
