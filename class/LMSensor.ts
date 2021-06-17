@@ -6,7 +6,7 @@ import { exec as execCb, spawn } from "child_process";
 import * as util from "util";
 import parser from "fast-xml-parser";
 import assert from "assert";
-import { cpu, mem } from "node-os-utils";
+import { cpu, mem, users } from "node-os-utils";
 import type { ILMSStats } from "../interface/ILMSStats";
 import type { IGPUStat } from "../interface/IGPUStat";
 import type winston from "winston";
@@ -57,6 +57,8 @@ export default class LMSensor extends EventEmitter {
             }
         });
 
+        this.m_notificationProcess.stderr.on("data", (d: Buffer) => this.m_logger.error(d.toString()));
+
         const interval = Duration.fromObject({ minutes : ((poll > 0) ? poll : tools.randomInt(2, 5)) }).toMillis();
 
         setInterval(this.readData.bind(this), interval);
@@ -78,7 +80,6 @@ export default class LMSensor extends EventEmitter {
             const [type, ... arr] = s.trim().split(" ");
 
             const value = arr.join(" ").trim();
-            console.log(value);
 
             switch (type) {
                 case "string":
@@ -108,46 +109,50 @@ export default class LMSensor extends EventEmitter {
     }
 
     private async readData(): Promise<void> {
-        const [gpu, cpuTemperature, ramUsage, isLocked, cpuUsage, micState, webcamState] = await Promise.all([
-            this.getGpuStats(),
-            this.getCpuTemperature(),
-            mem.used().then((u) => {
-                const ramUsage: number = Math.round(this.m_stats.ram_usage = (u.usedMemMb / u.totalMemMb) * 100);
-                this.m_logger.verbose(`RAM Usage: ${ramUsage}%`);
-                return ramUsage;
-            }),
-            this.getLockState(),
-            cpu.usage().then((u) => {
-                const cpuUsage: number = Math.round(u);
-                this.m_logger.verbose(`CPU Usage: ${cpuUsage}%`);
-                return cpuUsage;
-            }),
-            this.getMicState(),
-            this.getWebcamState()
-        ]);
+        try {
+            const [gpu, cpuTemperature, ramUsage, isLocked, cpuUsage, micState, webcamState] = await Promise.all([
+                this.getGpuStats(),
+                this.getCpuTemperature(),
+                mem.used().then((u) => {
+                    const ramUsage: number = Math.round(this.m_stats.ram_usage = (u.usedMemMb / u.totalMemMb) * 100);
+                    this.m_logger.verbose(`RAM Usage: ${ramUsage}%`);
+                    return ramUsage;
+                }),
+                this.getLockState(),
+                cpu.usage().then((u) => {
+                    const cpuUsage: number = Math.round(u);
+                    this.m_logger.verbose(`CPU Usage: ${cpuUsage}%`);
+                    return cpuUsage;
+                }),
+                this.getMicState(),
+                this.getWebcamState()
+            ]);
 
-        this.m_stats.cpu_temperature = cpuTemperature;
-        this.m_stats.cpu_usage = cpuUsage;
-        this.m_stats.gpu_temperature = gpu.temperature;
-        this.m_stats.gpu_usage = gpu.usage;
-        this.m_stats.ram_usage = ramUsage;
-        this.m_stats.state = isLocked ? LMPCStates.LOCKED : LMPCStates.ONLINE;
-        this.m_stats.micState = micState ? LMSwitchPositions.ON : LMSwitchPositions.OFF;
-        this.m_stats.webcamState = webcamState ? LMSwitchPositions.ON : LMSwitchPositions.OFF;
+            this.m_stats.cpu_temperature = cpuTemperature;
+            this.m_stats.cpu_usage = cpuUsage;
+            this.m_stats.gpu_temperature = gpu.temperature;
+            this.m_stats.gpu_usage = gpu.usage;
+            this.m_stats.ram_usage = ramUsage;
+            this.m_stats.state = isLocked ? LMPCStates.LOCKED : LMPCStates.ONLINE;
+            this.m_stats.micState = micState ? LMSwitchPositions.ON : LMSwitchPositions.OFF;
+            this.m_stats.webcamState = webcamState ? LMSwitchPositions.ON : LMSwitchPositions.OFF;
 
-        this.emit("stateChanged", this.currentState);
+            this.emit("stateChanged", this.currentState);
+        } catch (e) {
+            this.m_logger.error(e);
+        }
     }
 
     private async getMicState(): Promise<boolean> {
         const prc = await exec("pacmd info | grep \"Default source\" | cut -f4 -d\" \"");
-        assert(prc.stderr.trim().length <= 0, prc.stderr);
+        assert(prc.stderr.trim().length <= 0, new Error(prc.stderr.trim()));
         const deviceName = prc.stdout.trim();
 
         this.m_logger.verbose(`Found audio source ${deviceName}`);
         const prcSrc = await exec(`pacmd list sources | grep -A 10 ${deviceName} | grep "state" | cut -f2 -d" "`);
         const sourceStatus = prcSrc.stdout.trim();
 
-        assert(prcSrc.stderr.trim().length <= 0, prcSrc.stderr);
+        assert(prcSrc.stderr.trim().length <= 0, new Error(prcSrc.stderr.trim()));
 
         if (deviceName.length > 0) {
             switch (sourceStatus) {
@@ -167,13 +172,18 @@ export default class LMSensor extends EventEmitter {
     }
 
     private async getWebcamState(): Promise<boolean> {
-        const state = parseInt((await exec("lsmod | grep \"uvcvideo\\s\" | sed -E s/\\ +/\\ /g | cut -f3 -d\" \"")).stdout.trim()) === 1;
+        const prc = (await exec("lsmod | grep \"uvcvideo\\s\" | sed -E s/\\ +/\\ /g | cut -f3 -d\" \""));
+        assert(prc.stderr.trim().length <= 0, new Error(prc.stderr.trim()));
+        const state = parseInt(prc.stdout.trim()) === 1;
         this.m_logger.verbose(`Webcam is ${state ? LMSwitchPositions.ON : LMSwitchPositions.OFF}`);
         return state;
     }
 
     private async getCpuTemperature(): Promise<number> {
-        const cpuSensors = JSON.parse((await exec("sensors -j")).stdout);
+        const prc = (await exec("sensors -j"));
+        assert(prc.stderr.trim().length <= 0, new Error(prc.stderr.trim()));
+        const cpuSensors = JSON.parse(prc.stdout);
+
         const isaKey = Object.keys(cpuSensors).find(k => /isa/ig.test(k));
         if (isaKey != null) {
             const sensor = cpuSensors[isaKey];
@@ -196,7 +206,7 @@ export default class LMSensor extends EventEmitter {
 
     private async getLockState(): Promise<boolean> {
         try {
-            const nbOfUser: number = parseInt((await exec("who -q")).stdout.trim().split("\n").pop()?.split(":")?.pop()?.trim() ?? "0");
+            const nbOfUser = parseInt((await users.openedCount()).toString());
             this.m_logger.verbose(`${nbOfUser} user(s) connected`);
             const isLocked = nbOfUser <= 0;
             this.m_logger.verbose(isLocked ? "Session is locked" : "Session is unlocked");
@@ -209,11 +219,15 @@ export default class LMSensor extends EventEmitter {
     }
 
     private async getGpuStats(): Promise<IGPUStat> {
-        const json = parser.parse((await exec("nvidia-smi -q -x")).stdout);
+        const prc = (await exec("nvidia-smi -q -x"));
+        assert(prc.stderr.trim().length <= 0, new Error(prc.stderr.trim()));
+        const json = parser.parse(prc.stdout);
+
         const gpuStats: IGPUStat = {
             usage : parseFloat(json.nvidia_smi_log.gpu.utilization.gpu_util.slice(0, -2)),
             temperature : parseInt(json.nvidia_smi_log.gpu.temperature.gpu_temp.slice(0, -2))
         };
+
         this.m_logger.verbose(`GPU Usage: ${gpuStats.usage}%`);
         this.m_logger.verbose(`GPU Temp: ${gpuStats.temperature}°C`);
         return gpuStats;

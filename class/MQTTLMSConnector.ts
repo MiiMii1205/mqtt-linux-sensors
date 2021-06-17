@@ -13,7 +13,7 @@ export default class MQTTLMSConnector {
         const mqttClient = mqtt.connect(this.m_url, {
             will : {
                 topic : `${this.m_baseTopic}${MQTTLMSConnector.SENSOR_TOPIC}${hn}/connection`,
-                payload : "Offline",
+                payload : LMPCStates.OFFLINE,
                 qos : 0,
                 retain : true
             },
