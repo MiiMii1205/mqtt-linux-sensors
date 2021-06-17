@@ -128,7 +128,7 @@ export default class MQTTLMSConnector {
             availability_topic : `${deviceTopic}/connection`, // eslint-disable-next-line @typescript-eslint/naming-convention
             payload_available : LMPCStates.ONLINE, // eslint-disable-next-line @typescript-eslint/naming-convention
             payload_not_available : LMPCStates.OFFLINE, // eslint-disable-next-line @typescript-eslint/naming-convention
-            unique_id : `lm_${deviceTopic}_ram_usage_sensor`,
+            unique_id : `lm_${hn}_ram_usage_sensor`,
             device : deviceInfo, // eslint-disable-next-line @typescript-eslint/naming-convention
             value_template : "{{value_json['ram_usage']}}", // eslint-disable-next-line @typescript-eslint/naming-convention
             unit_of_measurement : "%"
@@ -140,7 +140,7 @@ export default class MQTTLMSConnector {
             availability_topic : `${deviceTopic}/connection`, // eslint-disable-next-line @typescript-eslint/naming-convention
             payload_available : LMPCStates.ONLINE, // eslint-disable-next-line @typescript-eslint/naming-convention
             payload_not_available : LMPCStates.OFFLINE, // eslint-disable-next-line @typescript-eslint/naming-convention
-            unique_id : `lm_${deviceTopic}_notification`,
+            unique_id : `lm_${hn}_notification`,
             device : deviceInfo, // eslint-disable-next-line @typescript-eslint/naming-convention
             icon : "mdi:bell", // eslint-disable-next-line @typescript-eslint/naming-convention
             json_attributes_topic : `${deviceTopic}/notifications/attributes`, // eslint-disable-next-line @typescript-eslint/naming-convention
