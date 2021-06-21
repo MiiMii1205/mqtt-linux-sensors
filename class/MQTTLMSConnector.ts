@@ -29,6 +29,7 @@ export default class MQTTLMSConnector {
         const cpuUsageTopic = `${this.m_baseTopic}${MQTTLMSConnector.SENSOR_TOPIC}lm_${hn}_cpu_usage`;
         const ramUsageTopic = `${this.m_baseTopic}${MQTTLMSConnector.SENSOR_TOPIC}lm_${hn}_ram_usage`;
         const micTopic = `${this.m_baseTopic}${MQTTLMSConnector.SENSOR_TOPIC}lm_${hn}_mic`;
+        const idleTopic = `${this.m_baseTopic}${MQTTLMSConnector.SENSOR_TOPIC}lm_${hn}_idle`;
         const webcamTopic = `${this.m_baseTopic}${MQTTLMSConnector.SENSOR_TOPIC}lm_${hn}_webcam`;
         const notificationTopic = `${this.m_baseTopic}${MQTTLMSConnector.SENSOR_TOPIC}lm_${hn}_notification`;
 
@@ -152,6 +153,18 @@ export default class MQTTLMSConnector {
             value_template : "{{value_json['notification']['description']}}" // eslint-disable-next-line @typescript-eslint/naming-convention
         };
 
+        const idleConfig = {
+            name : `${hn} Idle State`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            state_topic : `${deviceTopic}/state`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            availability_topic : `${deviceTopic}/connection`, // eslint-disable-next-line @typescript-eslint/naming-convention
+            payload_available : LMPCStates.ONLINE, // eslint-disable-next-line @typescript-eslint/naming-convention
+            payload_not_available : LMPCStates.OFFLINE, // eslint-disable-next-line @typescript-eslint/naming-convention
+            unique_id : `lm_${hn}_idle`,
+            device : deviceInfo, // eslint-disable-next-line @typescript-eslint/naming-convention
+            icon : "mdi:sleep", // eslint-disable-next-line @typescript-eslint/naming-convention
+            value_template : "{{value_json['idle']}}" // eslint-disable-next-line @typescript-eslint/naming-convention
+        };
+
         this.m_lmSensor.on("stateChanged", (data) => {
             this.m_logger.info(`state changed received: ${JSON.stringify(data)}`);
             mqttClient.publish(`${deviceTopic}/state`, JSON.stringify(data), {
@@ -194,6 +207,9 @@ export default class MQTTLMSConnector {
                 retain : true,
                 qos : 0
             }).publish(`${micTopic}/config`, JSON.stringify(micConfig), {
+                retain : true,
+                qos : 0
+            }).publish(`${idleTopic}/config`, JSON.stringify(idleConfig), {
                 retain : true,
                 qos : 0
             }).publish(`${notificationTopic}/config`, JSON.stringify(notificationConfig), {

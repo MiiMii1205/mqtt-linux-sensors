@@ -19,5 +19,6 @@ export interface ILMSStats {
     gpu_temperature: number;
     micState: LMSwitchPositions;
     webcamState: LMSwitchPositions;
+    idle: boolean;
     notification: ILMNotification;
 }

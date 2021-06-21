@@ -22,6 +22,7 @@ export default class LMSensor extends EventEmitter {
     private readonly m_hostname: string;
     private readonly m_notificationProcess: ChildProcessWithoutNullStreams;
     private m_stats: ILMSStats = {
+        idle : false,
         notification : {
             description : "",
             source : "",
@@ -110,7 +111,7 @@ export default class LMSensor extends EventEmitter {
 
     private async readData(): Promise<void> {
         try {
-            const [gpu, cpuTemperature, ramUsage, isLocked, cpuUsage, micState, webcamState] = await Promise.all([
+            const [gpu, cpuTemperature, ramUsage, isLocked, cpuUsage, micState, webcamState, idle] = await Promise.all([
                 this.getGpuStats(),
                 this.getCpuTemperature(),
                 mem.used().then((u) => {
@@ -125,7 +126,8 @@ export default class LMSensor extends EventEmitter {
                     return cpuUsage;
                 }),
                 this.getMicState(),
-                this.getWebcamState()
+                this.getWebcamState(),
+                this.getIdleState()
             ]);
 
             this.m_stats.cpu_temperature = cpuTemperature;
@@ -133,6 +135,7 @@ export default class LMSensor extends EventEmitter {
             this.m_stats.gpu_temperature = gpu.temperature;
             this.m_stats.gpu_usage = gpu.usage;
             this.m_stats.ram_usage = ramUsage;
+            this.m_stats.idle = idle;
             this.m_stats.state = isLocked ? LMPCStates.LOCKED : LMPCStates.ONLINE;
             this.m_stats.micState = micState ? LMSwitchPositions.ON : LMSwitchPositions.OFF;
             this.m_stats.webcamState = webcamState ? LMSwitchPositions.ON : LMSwitchPositions.OFF;
@@ -176,6 +179,14 @@ export default class LMSensor extends EventEmitter {
         assert(prc.stderr.trim().length <= 0, new Error(prc.stderr.trim()));
         const state = parseInt(prc.stdout.trim()) === 1;
         this.m_logger.verbose(`Webcam is ${state ? LMSwitchPositions.ON : LMSwitchPositions.OFF}`);
+        return state;
+    }
+
+    private async getIdleState(): Promise<boolean> {
+        const prc = (await exec("xprintidle"));
+        assert(prc.stderr.trim().length <= 0, new Error(prc.stderr.trim()));
+        const state = parseInt(prc.stdout.trim()) >= 300000;
+        this.m_logger.verbose(`Idle is ${state ? LMSwitchPositions.ON : LMSwitchPositions.OFF}`);
         return state;
     }
 
